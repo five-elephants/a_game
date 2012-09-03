@@ -5,6 +5,7 @@ from pygame.locals import *
 import resources as res
 from map import *
 from grid import *
+from test_agent import Test_agent 
 
 
 class Main:
@@ -22,7 +23,7 @@ class Main:
 
     pygame.init()
     
-    self.debug_mode = True
+    self.debug_mode = False
     self.click_state = self.CLICK_IDLE
 
     self.screen_size = screen_size
@@ -48,6 +49,10 @@ class Main:
 
     for g in self.grids:
       g.other_grids = filter(lambda x: x != g, self.grids)
+
+    self.agents = []
+    for g in self.grids[1:]:
+      self.agents.append(Test_agent(self.map, g))
 
   def show_fps(self):
     fps = self.clock.get_fps()
@@ -130,6 +135,9 @@ class Main:
         self.map.update(dt)
         for grid in self.grids:
           grid.update(dt)
+
+        for agent in self.agents:
+          agent.work()
 
         self.map.draw(self.screen)
         for grid in self.grids:

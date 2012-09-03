@@ -1,3 +1,4 @@
+from itertools import ifilter
 import pygame
 from pygame.locals import *
 import resources as res
@@ -92,3 +93,8 @@ class Map(pygame.sprite.Group):
       return self.map_file.outer[ij[0]][ij[1]]['owner']
     else:
       return None
+
+  def fields_without_owner(self):
+    fil = lambda x: self.is_tile_enabled(x) and not self.is_tile_owned(x)
+    return ifilter(fil, [ (i, j) for i in xrange(self.map_file.outer_size[0])
+                         for j in xrange(self.map_file.outer_size[1]) ])

@@ -238,7 +238,22 @@ class Grid(pygame.sprite.Group):
     print "adding attack-connection from %d,%d to %d,%d" % (
         my_ij[0], my_ij[1], his_ij[0], his_ij[1]
     )
-    
+
+  def find_outbound(self, ij):
+    pt = self.points[ij]
+    fil = lambda c: c.point_in == pt
+    return ifilter(fil, self.connections)
+
+  def find_inbound(self, ij):
+    pt = self.points[ij]
+    fil = lambda c: c.point_out == pt
+    return ifilter(fil, self.connections)
+
+  def num_points(self):
+    return len(self.points)
+
+  def num_enemy_points(self):
+    return sum(map(lambda x: x.num_points(), self.other_grids))
 
   def update(self, *args):
     pygame.sprite.Group.update(self, *args)
