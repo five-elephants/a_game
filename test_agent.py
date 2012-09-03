@@ -8,7 +8,7 @@ class Test_agent(Agent):
 
     self.expand_thresh = 0.9 
     self.outbound_per_point = 2
-    self.attack_advantage = 3
+    self.attack_advantage = 6
     self.attacker_outbound = 0
 
   def work(self):

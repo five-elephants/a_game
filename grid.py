@@ -48,7 +48,7 @@ class Point(pygame.sprite.Sprite):
     pygame.draw.circle(self.image,
         res.resources.player_colors[self.owner],
         self.image.get_rect().center,
-        int(round((self.image.get_width()/8))))
+        int(round((self.image.get_width()/4-6))))
     
     pygame.draw.circle(self.image,
                        res.resources.point_inner_color,
@@ -151,9 +151,9 @@ class Connection(pygame.sprite.Sprite):
       #color_scale = math.exp(-math.sin(self.timer / interval * math.pi))
       t = min(self.timer, interval)
       color_scale = min(1.0, math.exp(-t/0.1) + math.exp((t - interval)/0.01))
-      color = pygame.Color(int(color_scale * 255),
-                           int(color_scale * 255),
-                           int(color_scale * 255),
+      color = pygame.Color(int(color_scale * res.resources.player_colors[self.owner].r),
+                           int(color_scale * res.resources.player_colors[self.owner].g),
+                           int(color_scale * res.resources.player_colors[self.owner].b),
                            255)
       pygame.draw.aaline(self.image, color, a, b, 0)
     else:
