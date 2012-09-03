@@ -48,7 +48,7 @@ class Point(pygame.sprite.Sprite):
 
 
 class Connection(pygame.sprite.Sprite):
-  def __init__(self, owner, xy_a, xy_b, pt_in, pt_out):
+  def __init__(self, owner, xy_a, xy_b, pt_in, pt_out, is_attack=False):
     pygame.sprite.Sprite.__init__(self)
 
     #self.rect = pygame.Rect(
@@ -62,6 +62,7 @@ class Connection(pygame.sprite.Sprite):
     self.point_out = pt_out
     self.u = xy_a
     self.v = xy_b
+    self.is_attack = is_attack
 
     self.image = pygame.Surface(
         (abs(xy_a[0] - xy_b[0]) + 20, abs(xy_a[1] - xy_b[1])+20)
@@ -130,13 +131,22 @@ class Connection(pygame.sprite.Sprite):
 
   def update(self, dt):
     self.timer += dt
-    if self.timer > rules.rules.transport_interval:
-      if rules.rules.get_point_state(self.point_in.value) >= rules.rules.POINT_STATE_GROWING:
-        self.point_in.value -= rules.rules.transport_value
-        self.point_out.value += rules.rules.transport_value
-        self.point_in.value = max(rules.rules.value_min, self.point_in.value)
-        self.point_out.value = min(rules.rules.value_max, self.point_out.value)
-      self.timer = 0.0
+    if self.is_attack:
+      if self.timer > rules.rules.attack_interval:
+        if rules.rules.get_point_state(self.point_in.value) >= rules.rules.POINT_STATE_GROWING:
+          self.point_in.value -= rules.rules.attack_invest
+          self.point_out.value -= rules.rules.attack_damage
+          self.point_in.value = max(rules.rules.value_min, self.point_in.value)
+          self.point_out.value = max(rules.rules.value_min, self.point_out.value)
+        self.timer = 0.0
+    else:
+      if self.timer > rules.rules.transport_interval:
+        if rules.rules.get_point_state(self.point_in.value) >= rules.rules.POINT_STATE_GROWING:
+          self.point_in.value -= rules.rules.transport_value
+          self.point_out.value += rules.rules.transport_value
+          self.point_in.value = max(rules.rules.value_min, self.point_in.value)
+          self.point_out.value = min(rules.rules.value_max, self.point_out.value)
+        self.timer = 0.0
 
 
 class Grid(pygame.sprite.Group):
@@ -205,6 +215,31 @@ class Grid(pygame.sprite.Group):
         ij_in[0], ij_in[1], ij_out[0], ij_out[1]
     )
 
+  def attack(self, my_ij, his_ij, his_grid):
+    con = Connection(
+        self.player,
+        self.map.ij2xy_c(my_ij),
+        self.map.ij2xy_c(his_ij),
+        self.points[my_ij],
+        his_grid.points[his_ij],
+        is_attack=True
+    )
+
+    ## collision test ##
+    for g in self.other_grids:
+      collides = pygame.sprite.spritecollide(con, g, False,
+          collided=Connection.collision_check)
+      if len(collides) > 0:
+        print "collision with opponent"
+        return
+
+    self.connections.append(con)
+    self.add(con)
+    print "adding attack-connection from %d,%d to %d,%d" % (
+        my_ij[0], my_ij[1], his_ij[0], his_ij[1]
+    )
+    
+
   def update(self, *args):
     pygame.sprite.Group.update(self, *args)
 
@@ -220,6 +255,13 @@ class Grid(pygame.sprite.Group):
         cons_to_rm = ifilter(filter, self.connections)
         print map(lambda c: c.kill(), cons_to_rm)
         self.connections[:] = list(ifilterfalse(filter, self.connections))
+
+        ## remove attack-connections from other grids ##
+        for g in self.other_grids:
+          filter = lambda c: c.point_out == pt 
+          cons_to_rm = ifilter(filter, g.connections)
+          map(lambda c: c.kill(), cons_to_rm)
+          g.connections[:] = list(ifilterfalse(filter, g.connections))
     
     for ij in to_kill:
       self.points.pop(ij)

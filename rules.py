@@ -14,6 +14,9 @@ class Rules:
     self.new_point_val = 0.2
     self.transport_interval = 1.2
     self.transport_value = 0.07
+    self.attack_interval = 0.8
+    self.attack_invest = 0.07
+    self.attack_damage = 0.035
 
   def get_point_state(self, value):
     if value < self.source_thresh: state = 0

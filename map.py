@@ -87,3 +87,8 @@ class Map(pygame.sprite.Group):
     else:
       return False
 
+  def get_owner(self, ij):
+    if self.map_file.outer[ij[0]][ij[1]].has_key('owner'):
+      return self.map_file.outer[ij[0]][ij[1]]['owner']
+    else:
+      return None
