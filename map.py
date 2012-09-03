@@ -11,10 +11,6 @@ class Tile(pygame.sprite.Sprite):
     self.rect = self.image.get_rect()
     self.rect.center = pos
 
-  def update(self):
-    pass
-
-
 
 class Map(pygame.sprite.Group):
   def __init__(self, filename, screen_rect):
@@ -71,8 +67,8 @@ class Map(pygame.sprite.Group):
     return i, j
 
   def is_tile_enabled(self, ij):
-    if( ij[0] > 0 and ij[0] < len(self.map_file.outer) 
-        and ij[1] > 0 and ij[1] < len(self.map_file.outer[ij[0]]) ):
+    if( ij[0] >= 0 and ij[0] < len(self.map_file.outer) 
+        and ij[1] >= 0 and ij[1] < len(self.map_file.outer[ij[0]]) ):
       return self.map_file.outer[ij[0]][ij[1]].has_key('enabled')
     else:
       return False

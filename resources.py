@@ -18,11 +18,21 @@ def load_image(name, colorkey=None):
 
 class Resources:
   def __init__(self, data_dir, screen_size):
-    self.colorkey = pygame.Color(0, 255, 0, 255)
-
     ## fonts ##
     self.std_font = pygame.font.Font(None, 20)
     self.big_font = pygame.font.Font(None, 50)
+
+    ## colors ##
+    self.colorkey = pygame.Color(0, 255, 0, 255)
+    self.player_colors = [
+        pygame.Color(255, 0,   0, 255),
+        pygame.Color(  0, 0, 255, 255),
+    ]
+    self.point_halo_colors = [
+        pygame.Color( 50,  50, 200, 128),
+        pygame.Color( 50, 200,  50, 128),
+        pygame.Color(200, 200, 200, 128),
+    ]
 
     ## images ##
     #self.background = pygame.Surface(screen_size)
