@@ -1,3 +1,4 @@
+import random
 from agent import *
 from rules import rules
 
@@ -30,7 +31,8 @@ class Test_agent(Agent):
       self.grid.grow(a[0], a[1])
 
   def find_expansion_pos(self, ij):
-    free = self.map.fields_without_owner()
+    free = list(self.map.fields_without_owner())
+    random.shuffle(free)
     dist_key = lambda x: (x[0] - ij[0])**2 + (x[1] - ij[1])**2
     free_by_dist = sorted(free, key=dist_key)
     if free_by_dist:

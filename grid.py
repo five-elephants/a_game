@@ -1,4 +1,5 @@
 from itertools import ifilterfalse, ifilter, imap
+import math
 import pygame
 from pygame.locals import *
 import resources as res
@@ -9,7 +10,7 @@ class Point(pygame.sprite.Sprite):
     pygame.sprite.Sprite.__init__(self)
 
     #self.image = res.resources.point 
-    self.image = pygame.Surface((64, 64))
+    self.image = pygame.Surface((64, 64), SRCALPHA)
     self.image.fill(res.resources.colorkey)
     self.image.set_colorkey(res.resources.colorkey)
     self.rect = self.image.get_rect()
@@ -38,14 +39,23 @@ class Point(pygame.sprite.Sprite):
     pygame.draw.circle(self.image,
         res.resources.point_halo_colors[state],
         self.image.get_rect().center,
-        max(int(self.value * (self.image.get_width()/2 - 4)), 10))
+        max(int(round(self.value * (self.image.get_width()/2 - 4))), 10))
+    self.image.blit(res.resources.halo_screen, self.image.get_rect(),
+                   special_flags=BLEND_RGBA_MIN)
+
 
     ## player color mark
     pygame.draw.circle(self.image,
         res.resources.player_colors[self.owner],
         self.image.get_rect().center,
-        int(self.value * (self.image.get_width()/2 - 12)))
-
+        int(round((self.image.get_width()/8))))
+    
+    pygame.draw.circle(self.image,
+                       res.resources.point_inner_color,
+                       self.image.get_rect().center,
+                       int(round((self.image.get_width()/8-4)))) 
+     
+    self.image.blit(res.resources.point_screen, self.image.get_rect())
 
 class Connection(pygame.sprite.Sprite):
   def __init__(self, owner, xy_a, xy_b, pt_in, pt_out, is_attack=False):
@@ -65,21 +75,13 @@ class Connection(pygame.sprite.Sprite):
     self.is_attack = is_attack
 
     self.image = pygame.Surface(
-        (abs(xy_a[0] - xy_b[0]) + 20, abs(xy_a[1] - xy_b[1])+20)
+        (abs(xy_a[0] - xy_b[0]) + 20, abs(xy_a[1] - xy_b[1])+20),
+        SRCALPHA
     )
     self.rect = self.image.get_rect()
     self.rect.left = min(xy_a[0], xy_b[0])-10
     self.rect.top = min(xy_a[1], xy_b[1])-10
-    self.image.fill(res.resources.colorkey)
-    self.image.set_colorkey(res.resources.colorkey)
-    self.color = pygame.Color(58, 176, 242, 255)
-    a = (xy_a[0] - self.rect.left, xy_a[1] - self.rect.top)
-    b = (xy_b[0] - self.rect.left, xy_b[1] - self.rect.top)
-    pygame.draw.line(self.image,
-        res.resources.player_colors[self.owner],
-        a, b, 4)
-    pygame.draw.aaline(self.image, self.color, a, b, 0)
-    pygame.draw.circle(self.image, self.color, b, 5)
+    #self.image.set_colorkey(res.resources.colorkey)
 
     self.timer = 0.0
 
@@ -131,22 +133,51 @@ class Connection(pygame.sprite.Sprite):
 
   def update(self, dt):
     self.timer += dt
+
+    a = (self.u[0] - self.rect.left, self.u[1] - self.rect.top)
+    b = (self.v[0] - self.rect.left, self.v[1] - self.rect.top)
+    self.image.fill(pygame.Color(0,0,0,0))
+
     if self.is_attack:
-      if self.timer > rules.rules.attack_interval:
+      interval = rules.rules.attack_interval
+      if self.timer > interval:
         if rules.rules.get_point_state(self.point_in.value) >= rules.rules.POINT_STATE_GROWING:
           self.point_in.value -= rules.rules.attack_invest
           self.point_out.value -= rules.rules.attack_damage
           self.point_in.value = max(rules.rules.value_min, self.point_in.value)
           self.point_out.value = max(rules.rules.value_min, self.point_out.value)
         self.timer = 0.0
+      
+      #color_scale = math.exp(-math.sin(self.timer / interval * math.pi))
+      t = min(self.timer, interval)
+      color_scale = min(1.0, math.exp(-t/0.1) + math.exp((t - interval)/0.01))
+      color = pygame.Color(int(color_scale * 255),
+                           int(color_scale * 255),
+                           int(color_scale * 255),
+                           255)
+      pygame.draw.aaline(self.image, color, a, b, 0)
     else:
-      if self.timer > rules.rules.transport_interval:
+      interval = rules.rules.transport_interval
+      if self.timer > interval:
         if rules.rules.get_point_state(self.point_in.value) >= rules.rules.POINT_STATE_GROWING:
           self.point_in.value -= rules.rules.transport_value
           self.point_out.value += rules.rules.transport_value
           self.point_in.value = max(rules.rules.value_min, self.point_in.value)
           self.point_out.value = min(rules.rules.value_max, self.point_out.value)
         self.timer = 0.0
+
+      p = (
+        int(self.u[0] - self.rect.left + (self.timer/interval) * (self.v[0] - self.u[0])),
+        int(self.u[1] - self.rect.top+ (self.timer/interval) * (self.v[1] - self.u[1])),
+      )
+      #pygame.draw.line(self.image,
+          #res.resources.player_colors[self.owner],
+          #a, b, 4)
+      pygame.draw.aaline(self.image, res.resources.connection_color, a, b, 0)
+      #pygame.draw.line(self.image, res.resources.connection_color, a, b, 1)
+      pygame.draw.circle(self.image, res.resources.connection_color, b, 5)
+      pygame.draw.circle(self.image, res.resources.transport_color, p, 3)
+
 
 
 class Grid(pygame.sprite.Group):

@@ -31,6 +31,8 @@ class Main:
 
     self.screen = pygame.display.set_mode(self.screen_size)
     pygame.display.set_caption('A Game!')
+    print "display driver: ", pygame.display.get_driver()
+    print "screen bit depth: ", self.screen.get_bitsize()
 
     res.resources = res.Resources('data', screen_size)
 
