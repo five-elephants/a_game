@@ -46,6 +46,9 @@ class Main:
       self.map.take_tile(startpoint, player_i)
     self.user_grid = self.grids[0] 
 
+    for g in self.grids:
+      g.other_grids = filter(lambda x: x != g, self.grids)
+
   def show_fps(self):
     fps = self.clock.get_fps()
     font = res.resources.std_font

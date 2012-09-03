@@ -60,6 +60,8 @@ class Connection(pygame.sprite.Sprite):
     self.owner = owner
     self.point_in = pt_in
     self.point_out = pt_out
+    self.u = xy_a
+    self.v = xy_b
 
     self.image = pygame.Surface(
         (abs(xy_a[0] - xy_b[0]) + 20, abs(xy_a[1] - xy_b[1])+20)
@@ -80,6 +82,52 @@ class Connection(pygame.sprite.Sprite):
 
     self.timer = 0.0
 
+  def collision_check(a, b):
+    if not (type(a) == Connection and type(b) == Connection):
+      return False
+
+    print "--- collision check ---"
+    print "a: u = (%d, %d), v = (%d, %d)" % (
+        a.u[0], a.u[1], a.v[0], a.v[1]
+    )
+    print "b: u = (%d, %d), v = (%d, %d)" % (
+        b.u[0], b.u[1], b.v[0], b.v[1]
+    )
+
+    na_x = a.v[1] - a.u[1]
+    na_y = -(a.v[0] - a.u[0])
+    nb_x = b.v[1] - b.u[1]
+    nb_y = -(b.v[0] - b.u[0])
+
+    print "normals for a: %d,%d, b: %d,%d" % (
+        na_x, na_y, nb_x, nb_y
+    )
+
+    ## test b against a
+    ba0_x = b.u[0] - a.u[0]
+    ba0_y = b.u[1] - a.u[1]
+    ba1_x = b.v[0] - a.u[0]
+    ba1_y = b.v[1] - a.u[1]
+    sep0_a = ba0_x * na_x + ba0_y * na_y
+    sep1_a = ba1_x * na_x + ba1_y * na_y
+    print "sep0_a=%d, sep1_a=%d" % (
+        sep0_a, sep1_a
+    )
+
+    ## test a against b
+    ab0_x = a.u[0] - b.u[0]
+    ab0_y = a.u[1] - b.u[1]
+    ab1_x = a.v[0] - b.u[0]
+    ab1_y = a.v[1] - b.u[1]
+    sep0_b = ab0_x * nb_x + ab0_y * nb_y
+    sep1_b = ab1_x * nb_x + ab1_y * nb_y
+
+    print "sep0_b=%d, sep1_b=%d" % (
+        sep0_b, sep1_a
+    )
+
+    return (sep0_a * sep1_a) < 0 and (sep0_b * sep1_b) < 0
+
   def update(self, dt):
     self.timer += dt
     if self.timer > rules.rules.transport_interval:
@@ -98,6 +146,7 @@ class Grid(pygame.sprite.Group):
     self.player = player
     self.screen_rect = screen_rect
     self.map = the_map
+    self.other_grids = []
 
     ## starting point in grid ##
     sp = Point(rules.rules.source_thresh, player, the_map.ij2xy_c(startpoint))
@@ -109,44 +158,30 @@ class Grid(pygame.sprite.Group):
     self.connections = []
     self.game_over = False
 
-  def grow(self, ij, connect_in=None):
+  def grow(self, ij, connect_in):
     pt = Point(rules.rules.new_point_val, self.player, self.map.ij2xy_c(ij))
     self.points[ij] = pt
     self.add(pt)
     self.map.take_tile(ij, self.player)
 
-    if connect_in == None:
-      for di,dj in [ (0,-1), (0,1), (-1,0), (1,0) ]:
-        i = ij[0] + di
-        j = ij[1] + dj
+    con = Connection(
+        self.player,
+        self.map.ij2xy_c(connect_in),
+        self.map.ij2xy_c(ij),
+        self.points[connect_in],
+        self.points[ij])
 
-        while( i >= 0 and i < self.map.map_file.outer_size[0]
-            and j >= 0 and j < self.map.map_file.outer_size[1]
-            and not self.map.is_tile_owned((i,j)) ):
-          print "testing %d,%d" % (i,j)
-          i += di
-          j += dj
+    ## collision test ##
+    for g in self.other_grids:
+      collides = pygame.sprite.spritecollide(con, g, False,
+          collided=Connection.collision_check)
+      if len(collides) > 0:
+        print "collision with opponent"
+        return
 
-        if self.map.is_tile_owned((i,j), self.player):
-          con = Connection(
-              self.player,
-              self.map.ij2xy_c((i,j)),
-              self.map.ij2xy_c(ij),
-              self.points[(i,j)],
-              pt)
-          self.connections.append(con)
-          self.add(con)
-          print "adding connection at %d,%d" % (i,j)
-    else:
-      con = Connection(
-          self.player,
-          self.map.ij2xy_c(connect_in),
-          self.map.ij2xy_c(ij),
-          self.points[connect_in],
-          self.points[ij])
-      self.connections.append(con)
-      self.add(con)
-      print "adding connection at %d,%d" % (connect_in[0], connect_in[1])
+    self.connections.append(con)
+    self.add(con)
+    print "adding connection at %d,%d" % (connect_in[0], connect_in[1])
 
   def connect(self, ij_in, ij_out):
     con = Connection(
@@ -155,6 +190,15 @@ class Grid(pygame.sprite.Group):
         self.map.ij2xy_c(ij_out),
         self.points[ij_in],
         self.points[ij_out])
+
+    ## collision test ##
+    for g in self.other_grids:
+      collides = pygame.sprite.spritecollide(con, g, False,
+          collided=Connection.collision_check)
+      if len(collides) > 0:
+        print "collision with opponent"
+        return
+
     self.connections.append(con)
     self.add(con)
     print "adding connection from %d,%d to %d,%d" % (
