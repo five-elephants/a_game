@@ -17,3 +17,20 @@ You play with the mouse. Yours are the red pieces. Your goal is to remove all
 blue pieces (controlled by the computer) from the map. You do this by first
 building a network of nodes over the map and then use these to attack the enemy
 network.
+
+Creating new nodes:
+Click on one of your existing nodes and then on a free position on the map. This
+creates a new node that is connected to your old node. Every node has a certain
+size value and is either growing or shrinking. This is indicated by the size of
+the node and its color. Connections transport a certain amount of this size to 
+the other node. This happens at fixed intervals with a fixed quantity.
+A new node is initially shrinking (blue state) and must be fed by its parent
+until it is growing (orange state) by itself. If a node is shrinking and not fed
+from other nodes it will eventually die and be removed from the map.
+
+Attacking nodes:
+Click on one of your nodes and then on one of your opponent. This will create a
+connection that periodically inflicts damage on the opponent node. It will also 
+drain the attacking node.
+By the way, connections - attacking or not - may not cross connections of
+another player. You can use this to cut the map and create protected areas.
