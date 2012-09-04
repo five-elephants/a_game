@@ -74,6 +74,7 @@ class Main:
         else:
           self.click_state = self.CLICK_ED
           self.sel_a = ij
+          self.user_grid.select_point(ij)
       elif self.click_state == self.CLICK_ED:
         if not self.map.is_tile_owned(ij):
           print "growing grid to tile %s" % (str(ij))
@@ -85,6 +86,7 @@ class Main:
           self.grids[player].attack(self.sel_a, ij, other_grid)
 
         self.click_state = self.CLICK_IDLE
+        self.user_grid.unselect_point()
 
   def game_over(self):
     self.map.draw(self.screen)

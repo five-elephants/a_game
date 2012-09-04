@@ -19,6 +19,9 @@ class Point(pygame.sprite.Sprite):
     self.owner = owner
     self.value = init_val
     self.kill_me = False
+    self.num_inbound = 0
+    self.num_outbound = 0
+    self.selected = False
 
   def update(self, dt):
     state = rules.rules.get_point_state(self.value)
@@ -43,7 +46,7 @@ class Point(pygame.sprite.Sprite):
     self.image.blit(res.resources.halo_screen, self.image.get_rect(),
                    special_flags=BLEND_RGBA_MIN)
 
-
+     
     ## player color mark
     pygame.draw.circle(self.image,
         res.resources.player_colors[self.owner],
@@ -56,6 +59,21 @@ class Point(pygame.sprite.Sprite):
                        int(round((self.image.get_width()/8-4)))) 
      
     self.image.blit(res.resources.point_screen, self.image.get_rect())
+    self.image.fill(res.resources.point_halo_colors[state],
+                    pygame.Rect(4, 4, int(round(self.value * 56)), 4))
+
+    for i in xrange(self.num_inbound):
+      self.image.fill(res.resources.point_halo_colors[2],
+                      pygame.Rect(4, 56 - i*6, 4, 4))
+
+    for i in xrange(self.num_outbound):
+      self.image.fill(res.resources.point_halo_colors[0],
+                      pygame.Rect(56, 56 - i*6, 4, 4))
+
+    if self.selected:
+      pygame.draw.rect(self.image, res.resources.player_colors[self.owner],
+                       self.image.get_rect(), 2)
+    
 
 class Connection(pygame.sprite.Sprite):
   def __init__(self, owner, xy_a, xy_b, pt_in, pt_out, is_attack=False):
@@ -89,22 +107,22 @@ class Connection(pygame.sprite.Sprite):
     if not (type(a) == Connection and type(b) == Connection):
       return False
 
-    print "--- collision check ---"
-    print "a: u = (%d, %d), v = (%d, %d)" % (
-        a.u[0], a.u[1], a.v[0], a.v[1]
-    )
-    print "b: u = (%d, %d), v = (%d, %d)" % (
-        b.u[0], b.u[1], b.v[0], b.v[1]
-    )
+    #print "--- collision check ---"
+    #print "a: u = (%d, %d), v = (%d, %d)" % (
+        #a.u[0], a.u[1], a.v[0], a.v[1]
+    #)
+    #print "b: u = (%d, %d), v = (%d, %d)" % (
+        #b.u[0], b.u[1], b.v[0], b.v[1]
+    #)
 
     na_x = a.v[1] - a.u[1]
     na_y = -(a.v[0] - a.u[0])
     nb_x = b.v[1] - b.u[1]
     nb_y = -(b.v[0] - b.u[0])
 
-    print "normals for a: %d,%d, b: %d,%d" % (
-        na_x, na_y, nb_x, nb_y
-    )
+    #print "normals for a: %d,%d, b: %d,%d" % (
+        #na_x, na_y, nb_x, nb_y
+    #)
 
     ## test b against a
     ba0_x = b.u[0] - a.u[0]
@@ -113,9 +131,9 @@ class Connection(pygame.sprite.Sprite):
     ba1_y = b.v[1] - a.u[1]
     sep0_a = ba0_x * na_x + ba0_y * na_y
     sep1_a = ba1_x * na_x + ba1_y * na_y
-    print "sep0_a=%d, sep1_a=%d" % (
-        sep0_a, sep1_a
-    )
+    #print "sep0_a=%d, sep1_a=%d" % (
+        #sep0_a, sep1_a
+    #)
 
     ## test a against b
     ab0_x = a.u[0] - b.u[0]
@@ -125,9 +143,9 @@ class Connection(pygame.sprite.Sprite):
     sep0_b = ab0_x * nb_x + ab0_y * nb_y
     sep1_b = ab1_x * nb_x + ab1_y * nb_y
 
-    print "sep0_b=%d, sep1_b=%d" % (
-        sep0_b, sep1_a
-    )
+    #print "sep0_b=%d, sep1_b=%d" % (
+        #sep0_b, sep1_a
+    #)
 
     return (sep0_a * sep1_a) < 0 and (sep0_b * sep1_b) < 0
 
@@ -198,19 +216,17 @@ class Grid(pygame.sprite.Group):
 
     self.connections = []
     self.game_over = False
+    self.last_sel = None
 
   def grow(self, ij, connect_in):
     pt = Point(rules.rules.new_point_val, self.player, self.map.ij2xy_c(ij))
-    self.points[ij] = pt
-    self.add(pt)
-    self.map.take_tile(ij, self.player)
 
     con = Connection(
         self.player,
         self.map.ij2xy_c(connect_in),
         self.map.ij2xy_c(ij),
         self.points[connect_in],
-        self.points[ij])
+        pt)
 
     ## collision test ##
     for g in self.other_grids:
@@ -220,6 +236,9 @@ class Grid(pygame.sprite.Group):
         print "collision with opponent"
         return
 
+    self.points[ij] = pt
+    self.add(pt)
+    self.map.take_tile(ij, self.player)
     self.connections.append(con)
     self.add(con)
     print "adding connection at %d,%d" % (connect_in[0], connect_in[1])
@@ -291,6 +310,9 @@ class Grid(pygame.sprite.Group):
 
     to_kill = []
     for ij, pt in self.points.iteritems():
+      pt.num_inbound = len(list(self.find_inbound(ij)))
+      pt.num_outbound = len(list(self.find_outbound(ij)))
+
       if pt.kill_me:
         to_kill.append(ij)
         pt.kill() # remove from sprite groups
@@ -316,3 +338,13 @@ class Grid(pygame.sprite.Group):
     if len(self.points) == 0:
       self.game_over = True
 
+  def select_point(self, ij):
+    if self.last_sel != None:
+      self.points[self.last_sel].selected = False
+    self.points[ij].selected = True
+    self.last_sel = ij
+
+  def unselect_point(self):
+    if self.last_sel != None:
+      self.points[self.last_sel].selected = False
+    
