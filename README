@@ -1,0 +1,19 @@
+A Game!
+
+is a fast strategy game, or at least that is what I want it to be. The current
+state is the result of two days of work. You can play against a computer
+opponent on a single map. It still needs a lot of balancing and tweaking of
+the game experience. If you want to take a shot yourself, take a look at
+rules.py. The file defines central gameplay constants that have a huge impact on
+the experience.
+
+
+HOW TO PLAY
+
+You need the python module pygame installed. At the prompt type
+$ python a_game.py
+
+You play with the mouse. Yours are the red pieces. Your goal is to remove all
+blue pieces (controlled by the computer) from the map. You do this by first
+building a network of nodes over the map and then use these to attack the enemy
+network.
