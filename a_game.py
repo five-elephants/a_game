@@ -88,6 +88,12 @@ class Main:
         self.click_state = self.CLICK_IDLE
         self.user_grid.unselect_point()
 
+  def right_click(self, pos, player=0):
+    ij = self.map.get_index_by_coords(pos)
+    print "right click at %s, tile: %s" % (str(pos), str(ij))
+    if self.map.is_tile_enabled(ij) and self.map.is_tile_owned(ij, player):
+      self.user_grid.remove_outbound(ij)
+
   def game_over(self):
     self.map.draw(self.screen)
     for grid in self.grids:
@@ -126,6 +132,8 @@ class Main:
           return
         elif event.type == MOUSEBUTTONUP and event.button == 1:
           self.left_click(event.pos)
+        elif event.type == MOUSEBUTTONUP and event.button == 3:
+          self.right_click(event.pos)
         elif self.debug_mode and event.type == MOUSEBUTTONUP and event.button == 3:
           self.left_click(event.pos, player=1)
 

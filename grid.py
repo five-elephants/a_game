@@ -299,6 +299,14 @@ class Grid(pygame.sprite.Group):
     fil = lambda c: c.point_out == pt
     return ifilter(fil, self.connections)
 
+  def remove_outbound(self, ij):
+    pt = self.points[ij]
+    fil = lambda c: c.point_in == pt
+    outbound = ifilter(fil, self.connections)
+    map(lambda c: c.kill(), outbound)
+    self.connections[:] = list(ifilterfalse(fil, self.connections))
+
+
   def num_points(self):
     return len(self.points)
 
@@ -337,13 +345,13 @@ class Grid(pygame.sprite.Group):
 
     if len(self.points) == 0:
       self.game_over = True
-
+  
   def select_point(self, ij):
     if self.last_sel != None:
       self.points[self.last_sel].selected = False
     self.points[ij].selected = True
     self.last_sel = ij
-
+  
   def unselect_point(self):
     if self.last_sel != None:
       self.points[self.last_sel].selected = False
