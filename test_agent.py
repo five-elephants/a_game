@@ -37,7 +37,7 @@ class Test_agent(Agent):
           break
 
     for a in acts:
-      self.grid.grow(a[0], a[1])
+      self.grow(a[0], a[1])
 
     return len(acts) > 0
 
