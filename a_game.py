@@ -37,7 +37,7 @@ class Main:
     res.resources = res.Resources('data', screen_size)
 
     ## create game object ##
-    self.map = Map('data/diamond.map', self.screen.get_rect())
+    self.map = Map('data/sparse_diamond.map', self.screen.get_rect())
     if len(self.map.map_file.startpoints) < 2:
       raise SystemExit, "map does not specify enough startpoints"
 

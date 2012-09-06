@@ -36,6 +36,7 @@ class Resources:
     self.point_inner_color = pygame.Color('#cfcd5d')
     self.connection_color = pygame.Color('#cbe1e6')
     self.transport_color = pygame.Color('#67d0e6')
+    self.attack_color = pygame.Color('#31ff46')
 
     ## images ##
     #self.background = pygame.Surface(screen_size)

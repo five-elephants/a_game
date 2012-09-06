@@ -1,5 +1,6 @@
 from itertools import ifilterfalse, ifilter, imap
 import math
+import copy
 import pygame
 from pygame.locals import *
 import resources as res
@@ -92,13 +93,14 @@ class Connection(pygame.sprite.Sprite):
     self.v = xy_b
     self.is_attack = is_attack
 
+    extra_size = 70
     self.image = pygame.Surface(
-        (abs(xy_a[0] - xy_b[0]) + 20, abs(xy_a[1] - xy_b[1])+20),
+        (abs(xy_a[0] - xy_b[0]) + extra_size, abs(xy_a[1] - xy_b[1])+extra_size),
         SRCALPHA
     )
     self.rect = self.image.get_rect()
-    self.rect.left = min(xy_a[0], xy_b[0])-10
-    self.rect.top = min(xy_a[1], xy_b[1])-10
+    self.rect.left = min(xy_a[0], xy_b[0])-(extra_size/2)
+    self.rect.top = min(xy_a[1], xy_b[1])-(extra_size/2)
     #self.image.set_colorkey(res.resources.colorkey)
 
     self.timer = 0.0
@@ -168,12 +170,25 @@ class Connection(pygame.sprite.Sprite):
       
       #color_scale = math.exp(-math.sin(self.timer / interval * math.pi))
       t = min(self.timer, interval)
-      color_scale = min(1.0, math.exp(-t/0.1) + math.exp((t - interval)/0.01))
+      p = (
+        int(self.u[0] - self.rect.left + (self.timer/interval) * (self.v[0] - self.u[0])),
+        int(self.u[1] - self.rect.top+ (self.timer/interval) * (self.v[1] - self.u[1])),
+      )
+      color_scale = max(min(1.0, math.exp(-t/0.3) + math.exp((t - interval)/0.02)), 0.5)
       color = pygame.Color(int(color_scale * res.resources.player_colors[self.owner].r),
                            int(color_scale * res.resources.player_colors[self.owner].g),
                            int(color_scale * res.resources.player_colors[self.owner].b),
                            255)
-      pygame.draw.aaline(self.image, color, a, b, 0)
+      #pygame.draw.aaline(self.image, color, a, b, 0)
+      #pygame.draw.aaline(self.image, pygame.Color('#ffffff'), a, b, 0)
+      pygame.draw.line(self.image, pygame.Color('#ffffff80'), a, b, 3)
+      pygame.draw.circle(self.image, res.resources.attack_color, p, 6)
+      if interval - self.timer < 0.2:
+        r = pygame.Rect(0, 0, 64, 64)
+        r.center = b
+        color = copy.copy(res.resources.player_colors[self.owner])
+        color.a = 128
+        self.image.fill(color, r)
     else:
       interval = rules.rules.transport_interval
       if self.timer > interval:
