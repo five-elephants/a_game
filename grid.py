@@ -219,6 +219,9 @@ class Grid(pygame.sprite.Group):
     self.last_sel = None
 
   def grow(self, ij, connect_in):
+    if not self.points.has_key(connect_in):
+      return
+
     pt = Point(rules.rules.new_point_val, self.player, self.map.ij2xy_c(ij))
 
     con = Connection(
@@ -244,6 +247,9 @@ class Grid(pygame.sprite.Group):
     print "adding connection at %d,%d" % (connect_in[0], connect_in[1])
 
   def connect(self, ij_in, ij_out):
+    if not self.points.has_key(ij_in) or not self.points.has_key(ij_out):
+      return
+
     con = Connection(
         self.player,
         self.map.ij2xy_c(ij_in),
@@ -348,11 +354,17 @@ class Grid(pygame.sprite.Group):
   
   def select_point(self, ij):
     if self.last_sel != None:
-      self.points[self.last_sel].selected = False
+      if self.points.has_key(self.last_sel):
+        self.points[self.last_sel].selected = False
+      else:
+        self.last_sel = None
     self.points[ij].selected = True
     self.last_sel = ij
   
   def unselect_point(self):
     if self.last_sel != None:
-      self.points[self.last_sel].selected = False
+      if self.points.has_key(self.last_sel):
+        self.points[self.last_sel].selected = False
+      else:
+        self.last_sel = None
     

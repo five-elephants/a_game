@@ -6,16 +6,25 @@ class Test_agent(Agent):
   def __init__(self, map, grid):
     Agent.__init__(self, map, grid)
 
-    self.expand_thresh = 0.9 
+    self.expand_thresh = 0.6 
     self.outbound_per_point = 2
     self.attack_advantage = 6
     self.attacker_outbound = 0
+    self.force_attack = False
+    self.timer = 0.0
 
-  def work(self):
-    if self.grid.num_points() - self.grid.num_enemy_points() > self.attack_advantage:
-      self.attack()
-    else:
-      self.expand()
+  def work(self, dt):
+    self.timer += dt
+
+    if self.timer > (1.0/self.aps_limit):
+      if( self.force_attack
+         or self.grid.num_points() - self.grid.num_enemy_points() > self.attack_advantage):
+        count_action = self.attack()
+      else:
+        count_action = self.expand()
+
+      if count_action:
+        self.timer = 0.0
 
   def expand(self):
     acts = []
@@ -29,6 +38,8 @@ class Test_agent(Agent):
 
     for a in acts:
       self.grid.grow(a[0], a[1])
+
+    return len(acts) > 0
 
   def find_expansion_pos(self, ij):
     free = list(self.map.fields_without_owner())
@@ -47,6 +58,9 @@ class Test_agent(Agent):
         target,his_grid = self.find_target(ij)
         if target != None:
           self.grid.attack(ij, target, his_grid)
+          return True
+
+    return False
 
   def find_target(self, ij):
     enemies = []

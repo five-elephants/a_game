@@ -149,7 +149,7 @@ class Main:
           grid.update(dt)
 
         for agent in self.agents:
-          agent.work()
+          agent.work(dt)
 
         self.map.draw(self.screen)
         for grid in self.grids:
